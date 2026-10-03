@@ -1,0 +1,7 @@
+{
+  "name": "echorec-enterprise",
+  "build": {"dockerfile": "../.echorec/Dockerfile", "context": ".."},
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "remoteUser": "echorec"
+}
