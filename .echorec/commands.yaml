@@ -1,0 +1,8 @@
+# The commands Echorec's verify handlers run in this repository, inside the sandbox built from
+# .echorec/Dockerfile, from the repository root (docs/decisions.md D-114.4, D-133). The same commands
+# as .github/workflows/ci.yml. Exit status 0 means passed; anything else failed. One key per handler:
+#   run-tests -> test · run-lint -> lint · security-scan -> scan · run-regression -> regression
+test: pytest -q
+lint: ruff check . && ruff format --check .
+scan: bandit -q -r src
+regression: pytest -q regression
