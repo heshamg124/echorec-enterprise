@@ -3,7 +3,7 @@ import io
 
 import pytest
 
-from stockroom.cli import main, write_summary
+from stockroom.cli import main, write_inventory, write_summary
 
 
 @pytest.fixture
@@ -64,3 +64,30 @@ def test_summary_rejects_other_formats(stock_file, fmt, capsys):
 def test_write_summary_raises_for_unsupported_format():
     with pytest.raises(ValueError, match="unsupported summary format"):
         write_summary({}, io.StringIO(), "json")
+
+
+def test_inventory_format_csv(stock_file):
+    out = io.StringIO()
+    assert main(["inventory", stock_file, "--format", "csv"], out=out) == 0
+    rows = list(csv.reader(io.StringIO(out.getvalue())))
+    assert rows == [["sku", "quantity"], ["A1", "4"], ["B2", "2"]]
+
+
+def test_inventory_defaults_to_csv(stock_file):
+    explicit, default = io.StringIO(), io.StringIO()
+    main(["inventory", stock_file, "--format", "csv"], out=explicit)
+    main(["inventory", stock_file], out=default)
+    assert default.getvalue() == explicit.getvalue()
+
+
+@pytest.mark.parametrize("fmt", ["json", "xlsx"])
+def test_inventory_rejects_other_formats(stock_file, fmt, capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["inventory", stock_file, "--format", fmt], out=io.StringIO())
+    assert exc.value.code == 2
+    assert "invalid choice" in capsys.readouterr().err
+
+
+def test_write_inventory_raises_for_unsupported_format():
+    with pytest.raises(ValueError, match="unsupported inventory format"):
+        write_inventory({}, io.StringIO(), "json")
