@@ -59,6 +59,27 @@ skus,units,total_value
 2,6,4.9
 ```
 
+## `stockroom inventory`
+
+`stockroom inventory STOCK [--format FORMAT]` reads the same stock CSV as `stockroom report`,
+merging rows for the same SKU in the same way, and writes the quantity on hand of each SKU to
+standard output.
+
+`--format` accepts one value:
+
+- `csv` (the default): a header row `sku,quantity`, then one row per SKU sorted by SKU. The file
+  opens directly in a spreadsheet.
+
+Any other value is rejected with an `invalid choice` error and exit status 2.
+
+```console
+$ stockroom inventory stock.csv --format csv > inventory.csv
+$ cat inventory.csv
+sku,quantity
+A1,4
+B2,2
+```
+
 ## Rules
 
 - `main` is protected: a pull request, one approving review from a code owner, and passing
