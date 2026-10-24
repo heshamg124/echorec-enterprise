@@ -7,10 +7,12 @@ import csv
 import sys
 from typing import TextIO
 
-from stockroom.core import Item, add_item
+from stockroom.core import Item, add_item, total_value
 
 REPORT_FORMATS = ("csv",)
 REPORT_FIELDS = ("sku", "quantity", "unit_price", "value")
+SUMMARY_FORMATS = ("csv",)
+SUMMARY_FIELDS = ("skus", "units", "total_value")
 
 
 def read_stock(source: TextIO) -> dict[str, Item]:
@@ -32,12 +34,24 @@ def write_report(stock: dict[str, Item], out: TextIO, fmt: str = "csv") -> None:
         writer.writerow([item.sku, item.quantity, item.unit_price, round(item.quantity * item.unit_price, 2)])
 
 
+def write_summary(stock: dict[str, Item], out: TextIO, fmt: str = "csv") -> None:
+    """Write one row of stock totals in ``fmt``."""
+    if fmt not in SUMMARY_FORMATS:
+        raise ValueError(f"unsupported summary format: {fmt}")
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow(SUMMARY_FIELDS)
+    writer.writerow([len(stock), sum(i.quantity for i in stock.values()), total_value(stock)])
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="stockroom")
     commands = parser.add_subparsers(dest="command", required=True)
     report = commands.add_parser("report", help="write a stock report")
     report.add_argument("stock", type=argparse.FileType("r"), help="stock CSV (sku,quantity,unit_price)")
     report.add_argument("--format", choices=REPORT_FORMATS, default="csv", help="output format; default csv")
+    summary = commands.add_parser("summary", help="write stock totals")
+    summary.add_argument("stock", type=argparse.FileType("r"), help="stock CSV (sku,quantity,unit_price)")
+    summary.add_argument("--format", choices=SUMMARY_FORMATS, default="csv", help="format; default csv")
     return parser
 
 
@@ -45,7 +59,8 @@ def main(argv: list[str] | None = None, out: TextIO | None = None) -> int:
     args = build_parser().parse_args(argv)
     with args.stock as source:
         stock = read_stock(source)
-    write_report(stock, out or sys.stdout, args.format)
+    write = write_summary if args.command == "summary" else write_report
+    write(stock, out or sys.stdout, args.format)
     return 0
 
 
